@@ -49,4 +49,19 @@ class PeminjamanController extends Controller
         return redirect()->route('peminjam.peminjaman.index')
             ->with('success', 'Peminjaman berhasil diajukan');
     }
+
+    public function destroy(Peminjaman $peminjaman)
+    {
+        // Hanya bisa membatalkan peminjaman sendiri yang masih menunggu
+        if ($peminjaman->user_id !== auth()->id() || $peminjaman->status !== 'menunggu') {
+            return back()->with('error', 'Tidak dapat membatalkan peminjaman ini');
+        }
+
+        $peminjaman->delete();
+
+        logAktivitas('Membatalkan pengajuan peminjaman');
+
+        return redirect()->route('peminjam.peminjaman.index')
+            ->with('success', 'Peminjaman berhasil dibatalkan');
+    }
 }

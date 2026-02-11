@@ -16,6 +16,7 @@ use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalian
 
 use App\Http\Controllers\Petugas\PeminjamanController as PetugasPeminjamanController;
 use App\Http\Controllers\Petugas\PengembalianController as PetugasPengembalianController;
+use App\Http\Controllers\Petugas\LaporanController as PetugasLaporanController;
 
 
 Route::get('/', function () {
@@ -23,7 +24,7 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth'])->get('/dashboard', function () {
-    return view('dashboard.index');
+    return view('dashboard');
 })->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -71,6 +72,9 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/pengembalian', [AdminPengembalianController::class, 'index'])
         ->name('admin.pengembalian.index');
 
+    Route::get('/pengembalian/{id}', [AdminPengembalianController::class, 'show'])
+        ->name('admin.pengembalian.show');
+
     Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log.index');
 });
 
@@ -83,35 +87,57 @@ Route::prefix('petugas')
             ->name('petugas.peminjaman.index');
 
         // approve / reject
-        Route::post(
-            '/peminjaman/{id}/approve',
-            [PetugasPeminjamanController::class, 'approve']
-        )
+        Route::post('/peminjaman/{id}/approve', [PetugasPeminjamanController::class, 'approve'])
             ->name('petugas.peminjaman.approve');
 
-        Route::post(
-            '/peminjaman/{id}/serahkan',
-            [PetugasPeminjamanController::class, 'serahkan']
-        )
+        Route::post('/peminjaman/{id}/serahkan', [PetugasPeminjamanController::class, 'serahkan'])
             ->name('petugas.peminjaman.serahkan');
 
-        Route::post(
-            '/peminjaman/{id}/reject',
-            [PetugasPeminjamanController::class, 'reject']
-        )
+        Route::post('/peminjaman/{id}/reject', [PetugasPeminjamanController::class, 'reject'])
             ->name('petugas.peminjaman.reject');
 
+     // pengembalian
         Route::get('/pengembalian', [PetugasPengembalianController::class, 'index'])
             ->name('petugas.pengembalian.index');
+
+        Route::get('/pengembalian/history', [PetugasPengembalianController::class, 'history'])
+            ->name('petugas.pengembalian.history');
+
+        Route::get('/pengembalian/{peminjaman}', [PetugasPengembalianController::class, 'show'])
+            ->name('petugas.pengembalian.show');
 
         Route::post('/pengembalian/selesai', [PetugasPengembalianController::class, 'store'])
             ->name('petugas.pengembalian.store');
 
-        Route::get(
-            '/pengembalian/history',
-            [PetugasPengembalianController::class, 'history']
-        )->name('petugas.pengembalian.history');
+     // laporan
+        Route::get('/laporan', [PetugasLaporanController::class, 'index'])
+            ->name('petugas.laporan.index');
+
+        Route::get('/laporan/peminjaman', [PetugasLaporanController::class, 'peminjaman'])
+            ->name('petugas.laporan.peminjaman');
+
+        Route::get('/laporan/pengembalian', [PetugasLaporanController::class, 'pengembalian'])
+            ->name('petugas.laporan.pengembalian');
+
+        Route::get('/laporan/alat', [PetugasLaporanController::class, 'alat'])
+            ->name('petugas.laporan.alat');
+
+        Route::get('/laporan/user', [PetugasLaporanController::class, 'user'])
+            ->name('petugas.laporan.user');
+
+        Route::post('/laporan/export/peminjaman', [PetugasLaporanController::class, 'exportPeminjaman'])
+            ->name('petugas.laporan.export.peminjaman');
+
+        Route::post('/laporan/export/pengembalian', [PetugasLaporanController::class, 'exportPengembalian'])
+            ->name('petugas.laporan.export.pengembalian');
+
+
+        // Test route
+        Route::get('/test', function() {
+            return view('petugas.pengembalian.test');
+        })->name('petugas.test');
     });
+
 
 Route::prefix('peminjam')
     ->middleware(['auth'])
@@ -130,6 +156,9 @@ Route::prefix('peminjam')
 
         Route::post('/peminjaman', [PeminjamPeminjamanController::class, 'store'])
             ->name('peminjam.peminjaman.store');
+
+        Route::delete('/peminjaman/{id}', [PeminjamPeminjamanController::class, 'destroy'])
+            ->name('peminjam.peminjaman.destroy');
 
         Route::get(
             '/pengembalian',

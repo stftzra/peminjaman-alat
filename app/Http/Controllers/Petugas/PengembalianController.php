@@ -19,6 +19,24 @@ class PengembalianController extends Controller
         return view('petugas.pengembalian.index', compact('peminjamans'));
     }
 
+      public function show(Peminjaman $peminjaman)
+    {
+        $tanggalRencana = Carbon::parse($peminjaman->tanggal_kembali_rencana);
+        $hariIni = Carbon::today();
+
+        $hariTelat = $hariIni->greaterThan($tanggalRencana)
+            ? $tanggalRencana->diffInDays($hariIni)
+            : 0;
+
+        $denda = $hariTelat * ($peminjaman->alat->harga_denda ?? 0);
+
+        return view('petugas.pengembalian.show', compact(
+            'peminjaman',
+            'hariTelat',
+            'denda'
+        ));
+    }
+
     public function store(Request $request)
     {
         $peminjaman = Peminjaman::with('alat')->findOrFail($request->peminjaman_id);
