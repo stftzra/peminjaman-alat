@@ -48,6 +48,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alat</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batas Kembali</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kondisi</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
@@ -123,6 +124,26 @@
                                 </div>
                             </td>
 
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    @if($p->pengembalian)
+                                        @if($p->pengembalian->kondisi === 'rusak')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                <i class="fas fa-times-circle mr-1"></i>Rusak
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>Baik
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <i class="fas fa-clock mr-1"></i>Belum Dikembalikan
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+
                             <td class="px-6 py-4 text-center">
                                <a href="{{ route('petugas.pengembalian.show', $p->id) }}"
                            class="px-3 py-1 bg-blue-600 text-white rounded text-sm">
@@ -143,16 +164,14 @@
 
 {{-- MODALS --}}
 @foreach ($peminjamans as $p)
-    @php
+    <?php
         $tanggalRencana = \Carbon\Carbon::parse($p->tanggal_kembali_rencana);
         $hariIni = \Carbon\Carbon::today();
-
         $hariTelat = $hariIni->greaterThan($tanggalRencana)
             ? $tanggalRencana->diffInDays($hariIni)
             : 0;
-
         $denda = $hariTelat * $p->alat->harga_denda;
-    @endphp
+    ?>
 
     <!-- Modal -->
     <div id="modal{{ $p->id }}" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">

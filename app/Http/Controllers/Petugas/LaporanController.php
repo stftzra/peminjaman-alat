@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\Peminjaman;
 use App\Models\Pengembalian;
 use App\Models\Alat;
+use App\Models\Kategori;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Http\JsonResponse;
 
 class LaporanController extends Controller
 {
@@ -85,8 +88,60 @@ class LaporanController extends Controller
 
         if ($request->input('search')) {
             $search = $request->input('search');
-            $query->where('nama_alat', 'like', "%{$search}%")
-                  ->orWhere('kode_alat', 'like', "%{$search}%");
+            $query->where('nama_alat', 'like', "%{$search}%");
+        }
+
+        if ($request->input('kategori_id')) {
+            $query->where('kategori_id', $request->input('kategori_id'));
+        }
+
+        $alats = $query->get();
+
+        // Sinkronisasi otomatis kondisi_baik dengan stok untuk petugas
+        foreach ($alats as $alat) {
+            if ($alat->kondisi_baik != $alat->stok) {
+                $alat->update(['kondisi_baik' => $alat->stok]);
+                // Pastikan kondisi rusak tetap
+                $totalUnit = $alat->kondisi_baik + $alat->kondisi_rusak;
+                if ($totalUnit < $alat->stok + $alat->kondisi_rusak) {
+                    $alat->update(['kondisi_rusak' => max(0, $totalUnit - $alat->stok)]);
+                }
+            }
+        }
+
+        // Get peminjaman aktif per alat
+        $peminjamanAktif = Peminjaman::whereIn('status', ['disetujui', 'dipinjam'])
+            ->get()
+            ->groupBy('alat_id')
+            ->map(function($item) {
+                return $item->sum('jumlah');
+            });
+
+        // Get kategoris for filter
+        $kategoris = Kategori::all();
+
+        // Statistics - sesuai dengan logika stok tersedia
+        $totalStok = $alats->sum('stok'); // Total stok asli
+        $tersedia = $alats->sum('stok') - $peminjamanAktif->sum(); // Stok tersedia (total - dipinjam)
+        $dipinjam = $peminjamanAktif->sum(); // Total yang sedang dipinjam
+
+        return view('petugas.alat.index', compact(
+            'alats',
+            'kategoris',
+            'totalStok',
+            'tersedia',
+            'dipinjam',
+            'peminjamanAktif'
+        ));
+    }
+
+    public function exportAlatPdf(Request $request)
+    {
+        $query = Alat::with('kategori');
+
+        if ($request->input('search')) {
+            $search = $request->input('search');
+            $query->where('nama_alat', 'like', "%{$search}%");
         }
 
         if ($request->input('kategori_id')) {
@@ -102,7 +157,7 @@ class LaporanController extends Controller
         $habis = $alats->where('stok', 0)->count();
         $totalStok = $alats->sum('stok');
 
-        return view('petugas.laporan.alat', compact(
+        return view('petugas.laporan.export.alat-pdf', compact(
             'alats',
             'totalAlat',
             'tersedia',
@@ -142,49 +197,35 @@ class LaporanController extends Controller
     {
         $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->startOfMonth();
         $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now()->endOfDay();
-        $status = $request->input('status', 'all');
 
-        $query = Peminjaman::with(['user', 'alat'])
-            ->whereBetween('created_at', [$startDate, $endDate]);
+        // Ambil semua data peminjaman dengan relasi pengembalian
+        $peminjamans = Peminjaman::with(['user', 'alat', 'pengembalian'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->latest()
+            ->get();
 
-        if ($status !== 'all') {
-            $query->where('status', $status);
-        }
+        // Statistics
+        $totalPeminjaman = $peminjamans->count();
+        $menunggu = $peminjamans->where('status', 'menunggu')->count();
+        $disetujui = $peminjamans->where('status', 'disetujui')->count();
+        $dipinjam = $peminjamans->where('status', 'dipinjam')->count();
+        $selesai = $peminjamans->where('status', 'selesai')->count();
 
-        $peminjamans = $query->latest()->get();
+        return view('petugas.laporan.export.peminjaman-pdf', compact(
+            'peminjamans',
+            'startDate',
+            'endDate',
+            'totalPeminjaman',
+            'menunggu',
+            'disetujui',
+            'dipinjam',
+            'selesai'
+        ));
+    }
 
-        // Create CSV
-        $filename = "laporan_peminjaman_{$startDate->format('Y-m-d')}_{$endDate->format('Y-m-d')}.csv";
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ];
-
-        $callback = function() use ($peminjamans) {
-            $file = fopen('php://output', 'w');
-            
-            // Header
-            fputcsv($file, ['ID', 'User', 'Email', 'Alat', 'Jumlah', 'Tanggal Pinjam', 'Batas Kembali', 'Status', 'Dibuat']);
-
-            // Data
-            foreach ($peminjamans as $peminjaman) {
-                fputcsv($file, [
-                    $peminjaman->id,
-                    $peminjaman->user->name ?? '-',
-                    $peminjaman->user->email ?? '-',
-                    $peminjaman->alat->nama_alat ?? '-',
-                    $peminjaman->jumlah,
-                    $peminjaman->tanggal_pinjam,
-                    $peminjaman->batas_kembali,
-                    $peminjaman->status,
-                    $peminjaman->created_at->format('d M Y H:i')
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+    public function exportPeminjamanPdf(Request $request)
+    {
+        return $this->exportPeminjaman($request);
     }
 
     public function exportPengembalian(Request $request)
@@ -197,37 +238,104 @@ class LaporanController extends Controller
             ->latest()
             ->get();
 
-        // Create CSV
-        $filename = "laporan_pengembalian_{$startDate->format('Y-m-d')}_{$endDate->format('Y-m-d')}.csv";
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ];
+        // Statistics
+        $totalPengembalian = $pengembalians->count();
+        $tepatWaktu = $pengembalians->where('telat', 0)->count();
+        $terlambat = $pengembalians->where('telat', '>', 0)->count();
+        $totalDenda = $pengembalians->sum('denda');
 
-        $callback = function() use ($pengembalians) {
-            $file = fopen('php://output', 'w');
+        return view('petugas.laporan.export.pengembalian-pdf', compact(
+            'pengembalians',
+            'startDate',
+            'endDate',
+            'totalPengembalian',
+            'tepatWaktu',
+            'terlambat',
+            'totalDenda'
+        ));
+    }
+
+    public function exportPengembalianPdf(Request $request)
+    {
+        return $this->exportPengembalian($request);
+    }
+
+    // Fungsi untuk mengirim laporan pengembalian ke email peminjam
+    public function kirimLaporanPengembalianKePeminjam(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+
+        // Ambil semua pengembalian dalam rentang tanggal
+        $pengembalians = Pengembalian::with(['peminjaman.user', 'peminjaman.alat'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
+
+        // Kelompokkan berdasarkan user
+        $pengembaliansByUser = $pengembalians->groupBy('peminjaman.user_id');
+
+        foreach ($pengembaliansByUser as $userId => $userPengembalians) {
+            $user = User::find($userId);
             
-            // Header
-            fputcsv($file, ['ID', 'User', 'Email', 'Alat', 'Jumlah', 'Tanggal Kembali', 'Telat (Hari)', 'Denda', 'Dibuat']);
+            if ($user && $user->email) {
+                try {
+                    // Kirim email ke peminjam
+                    Mail::send([], [], function ($message) use ($user, $userPengembalians, $startDate, $endDate) {
+                        $message->to($user->email)
+                            ->subject('Laporan Pengembalian Alat - ' . $startDate->format('d M Y') . ' s/d ' . $endDate->format('d M Y'))
+                            ->view('emails.laporan_pengembalian', [
+                                'user' => $user,
+                                'pengembalians' => $userPengembalians,
+                                'startDate' => $startDate,
+                                'endDate' => $endDate
+                            ]);
+                    });
 
-            // Data
-            foreach ($pengembalians as $pengembalian) {
-                fputcsv($file, [
-                    $pengembalian->id,
-                    $pengembalian->peminjaman->user->name ?? '-',
-                    $pengembalian->peminjaman->user->email ?? '-',
-                    $pengembalian->peminjaman->alat->nama_alat ?? '-',
-                    $pengembalian->peminjaman->jumlah,
-                    $pengembalian->tanggal_kembali,
-                    $pengembalian->telat,
-                    $pengembalian->denda,
-                    $pengembalian->created_at->format('d M Y H:i')
-                ]);
+                    logAktivitas('Mengirim laporan pengembalian ke email peminjam: ' . $user->email);
+                } catch (\Exception $e) {
+                    logAktivitas('Gagal mengirim laporan pengembalian ke email: ' . $e->getMessage());
+                }
             }
+        }
 
-            fclose($file);
-        };
+        return back()->with('success', 'Laporan pengembalian berhasil dikirim ke email semua peminjam');
+    }
 
-        return response()->stream($callback, 200, $headers);
+    public function updateStok(Request $request): JsonResponse
+    {
+        $request->validate([
+            'alat_id' => 'required|exists:alats,id',
+            'stok' => 'required|integer|min:0',
+            'kondisi_baik' => 'required|integer|min:0',
+            'kondisi_rusak' => 'required|integer|min:0'
+        ]);
+
+        try {
+            $alat = Alat::findOrFail($request->alat_id);
+            
+            // Update kondisi
+            $alat->kondisi_baik = $request->kondisi_baik;
+            $alat->kondisi_rusak = $request->kondisi_rusak;
+            
+            // Update stok berdasarkan kondisi baik
+            $alat->stok = $request->kondisi_baik;
+            
+            $alat->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Stok dan kondisi alat berhasil diperbarui'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui stok: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

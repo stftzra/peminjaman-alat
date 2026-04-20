@@ -31,8 +31,8 @@ class PeminjamanController extends Controller
 
         $alat = Alat::findOrFail($request->alat_id);
 
-        if ($request->jumlah > $alat->stok) {
-            return back()->with('error', 'Jumlah melebihi stok tersedia');
+        if ($request->jumlah > $alat->kondisi_baik) {
+            return back()->with('error', 'Jumlah melebihi stok baik tersedia. Tersedia: ' . $alat->kondisi_baik . ' unit baik');
         }
 
         Peminjaman::create([
@@ -43,6 +43,10 @@ class PeminjamanController extends Controller
             'tanggal_kembali_rencana' => $request->tanggal_kembali_rencana,
             'status' => 'menunggu',
         ]);
+
+        // Kurangi stok dan kondisi baik saat peminjaman diajukan
+        $alat->decrement('stok', $request->jumlah);
+        $alat->decrement('kondisi_baik', $request->jumlah);
 
         logAktivitas('Mengajukan peminjaman alat');
 
@@ -57,11 +61,27 @@ class PeminjamanController extends Controller
             return back()->with('error', 'Tidak dapat membatalkan peminjaman ini');
         }
 
+        // Kembalikan stok yang sudah dikurangi
+        $peminjaman->alat->increment('stok', $peminjaman->jumlah);
+        
+        // Kembalikan kondisi baik yang sudah dikurangi
+        $peminjaman->alat->increment('kondisi_baik', $peminjaman->jumlah);
+
         $peminjaman->delete();
 
         logAktivitas('Membatalkan pengajuan peminjaman');
 
         return redirect()->route('peminjam.peminjaman.index')
             ->with('success', 'Peminjaman berhasil dibatalkan');
+    }
+
+    public function struk(Peminjaman $peminjaman)
+    {
+        // Pastikan hanya bisa lihat struk peminjaman sendiri
+        if ($peminjaman->user_id !== auth()->id()) {
+            abort(403, 'Anda tidak memiliki akses ke struk ini');
+        }
+
+        return view('peminjam.peminjaman.struk', compact('peminjaman'));
     }
 }

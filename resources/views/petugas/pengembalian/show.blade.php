@@ -110,6 +110,42 @@
                 <form action="{{ route('petugas.pengembalian.store') }}" method="POST" class="space-y-6">
                     @csrf
                     <input type="hidden" name="peminjaman_id" value="{{ $peminjaman->id }}">
+                    <input type="hidden" name="tanggal_pengembalian" value="{{ now()->format('Y-m-d H:i:s') }}">
+                    
+                    {{-- Kondisi Alat --}}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">Kondisi Alat Saat Dikembalikan</h3>
+                                <p class="text-sm text-gray-600">Periksa kondisi alat yang dikembalikan</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <label class="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                                <input type="radio" name="kondisi" value="baik" checked class="mr-3 text-green-600">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                    <span class="font-medium">Baik</span>
+                                    <span class="text-sm text-gray-500 ml-2">- Alat dalam kondisi baik</span>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                                <input type="radio" name="kondisi" value="rusak" class="mr-3 text-red-600">
+                                <div class="flex items-center">
+                                    <i class="fas fa-times-circle text-red-500 mr-2"></i>
+                                    <span class="font-medium">Rusak</span>
+                                    <span class="text-sm text-gray-500 ml-2">- Alat rusak atau tidak berfungsi</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="keterangan" value="Pengembalian diproses oleh petugas">
                     
                     <div class="flex flex-col sm:flex-row gap-4 justify-end">
                         <a href="{{ route('petugas.pengembalian.index') }}" 

@@ -1,8 +1,5 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\AlatController;
@@ -13,24 +10,56 @@ use App\Http\Controllers\Admin\PengembalianController as AdminPengembalianContro
 use App\Http\Controllers\Peminjam\AlatController as PeminjamAlatController;
 use App\Http\Controllers\Peminjam\PeminjamanController as PeminjamPeminjamanController;
 use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
+use App\Http\Controllers\Peminjam\LaporanController as PeminjamLaporanController;
 
 use App\Http\Controllers\Petugas\PeminjamanController as PetugasPeminjamanController;
 use App\Http\Controllers\Petugas\PengembalianController as PetugasPengembalianController;
 use App\Http\Controllers\Petugas\LaporanController as PetugasLaporanController;
 
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('auth.login');
-});
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::middleware(['auth'])->get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Dashboard routes berdasarkan role
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboards.admin');
+    })->name('admin.dashboard');
+});
+
+Route::middleware(['auth'])->prefix('petugas')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboards.petugas');
+    })->name('petugas.dashboard');
+});
+
+Route::middleware(['auth'])->prefix('peminjam')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboards.peminjam');
+    })->name('peminjam.dashboard');
 });
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
@@ -65,6 +94,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/alat/{id}/edit', [AlatController::class, 'edit'])->name('admin.alat.edit');
     Route::put('/alat/{id}', [AlatController::class, 'update'])->name('admin.alat.update');
     Route::delete('/alat/{id}', [AlatController::class, 'destroy'])->name('admin.alat.destroy');
+    Route::post('/alat/update-kondisi', [AlatController::class, 'updateKondisi'])->name('admin.alat.updateKondisi');
 
     Route::get('/peminjaman', [AdminPeminjamanController::class, 'index'])
         ->name('admin.peminjaman.index');
@@ -74,6 +104,9 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
 
     Route::get('/pengembalian/{id}', [AdminPengembalianController::class, 'show'])
         ->name('admin.pengembalian.show');
+
+    Route::post('/pengembalian/{id}/bayar-denda', [AdminPengembalianController::class, 'bayarDenda'])
+        ->name('admin.pengembalian.bayarDenda');
 
     Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log.index');
 });
@@ -128,9 +161,37 @@ Route::prefix('petugas')
         Route::post('/laporan/export/peminjaman', [PetugasLaporanController::class, 'exportPeminjaman'])
             ->name('petugas.laporan.export.peminjaman');
 
+        Route::get('/laporan/peminjaman/export-pdf', [PetugasLaporanController::class, 'exportPeminjamanPdf'])
+            ->name('petugas.laporan.export.peminjaman-pdf');
+
         Route::post('/laporan/export/pengembalian', [PetugasLaporanController::class, 'exportPengembalian'])
             ->name('petugas.laporan.export.pengembalian');
 
+        Route::get('/laporan/pengembalian/export-pdf', [PetugasLaporanController::class, 'exportPengembalianPdf'])
+            ->name('petugas.laporan.export.pengembalian-pdf');
+
+        Route::get('/pengembalian/{pengembalian}/struk', [PetugasPengembalianController::class, 'struk'])
+    ->name('petugas.pengembalian.struk');
+
+        Route::get('/laporan/alat/export-pdf', [PetugasLaporanController::class, 'exportAlatPdf'])
+            ->name('petugas.laporan.export.alat-pdf');
+
+        Route::post('/laporan/export/user', [PetugasLaporanController::class, 'exportUser'])
+            ->name('petugas.laporan.export.user');
+
+        // Kirim laporan pengembalian ke email peminjam
+        Route::post('/laporan/kirim-pengembalian-ke-peminjam', [PetugasLaporanController::class, 'kirimLaporanPengembalianKePeminjam'])
+            ->name('petugas.laporan.kirim-pengembalian-ke-peminjam');
+
+            Route::post('/pengembalian/{pengembalian}/kirim-email', 
+    [PetugasPengembalianController::class, 'kirimEmail']
+)->name('petugas.pengembalian.kirimEmail');
+
+Route::post('/alat/update-stok', [PetugasLaporanController::class, 'updateStok'])
+    ->name('petugas.alat.updateStok');
+
+Route::get('/alat', [PetugasLaporanController::class, 'alat'])
+    ->name('petugas.alat.index');
 
         // Test route
         Route::get('/test', function() {
@@ -157,6 +218,9 @@ Route::prefix('peminjam')
         Route::post('/peminjaman', [PeminjamPeminjamanController::class, 'store'])
             ->name('peminjam.peminjaman.store');
 
+        Route::get('/peminjaman/{id}/struk', [PeminjamPeminjamanController::class, 'struk'])
+            ->name('peminjam.peminjaman.struk');
+
         Route::delete('/peminjaman/{id}', [PeminjamPeminjamanController::class, 'destroy'])
             ->name('peminjam.peminjaman.destroy');
 
@@ -164,6 +228,16 @@ Route::prefix('peminjam')
             '/pengembalian',
             [PeminjamPengembalianController::class, 'index']
         )->name('peminjam.pengembalian.index');
+
+        Route::get('/pengembalian/{id}/struk', [PeminjamPengembalianController::class, 'struk'])
+            ->name('peminjam.pengembalian.struk');
+
+        // Laporan peminjam
+        Route::get('/laporan/pengembalian', [PeminjamLaporanController::class, 'pengembalian'])
+            ->name('peminjam.laporan.pengembalian');
+
+        Route::get('/laporan/pengembalian/export-pdf', [PeminjamLaporanController::class, 'exportPengembalianPdf'])
+            ->name('peminjam.laporan.pengembalian.export-pdf');
     });
 
 require __DIR__ . '/auth.php';

@@ -4,10 +4,11 @@
     use App\Models\User;
     use App\Models\Pengembalian;
 
-    // Statistics
-    $totalAlat = Alat::sum('stok');
-    $alatDipinjam = Peminjaman::whereIn('status', ['disetujui', 'dipinjam'])->sum('jumlah');
-    $peminjamanAktif = Peminjaman::whereIn('status', ['menunggu', 'disetujui', 'dipinjam'])->count();
+    // Statistics - sesuai dengan tabel alat
+    $totalStok = Alat::sum('kondisi_baik') + Alat::sum('kondisi_rusak');
+    $tersediaBaik = Alat::sum('kondisi_baik');
+    $totalUnitRusak = Alat::sum('kondisi_rusak');
+    $unitHabis = Alat::where('stok', 0)->count();
     $totalUser = User::count();
 
     // Chart data - Last 7 days
@@ -42,110 +43,185 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="p-6">
-
-    {{-- Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Dashboard Admin</h1>
-        <p class="text-gray-600">Ringkasan data sistem peminjaman alat</p>
-    </div>
-
-    {{-- Stats Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 bg-blue-100 rounded-xl">
-                    <i class="fas fa-boxes text-blue-600 text-xl"></i>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    {{-- Header with Welcome Section --}}
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+        <div class="p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Dashboard Admin</h1>
+                    <p class="text-indigo-100 text-lg">Selamat datang di sistem manajemen peminjaman alat</p>
+                    <div class="mt-4 flex items-center space-x-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            <span>{{ now()->format('d F Y') }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-2"></i>
+                            <span>{{ now()->format('H:i') }}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500">Total Stok Alat</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($totalAlat) }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 bg-yellow-100 rounded-xl">
-                    <i class="fas fa-hand-holding text-yellow-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500">Alat Dipinjam</p>
-                    <p class="text-2xl font-bold text-yellow-600">{{ number_format($alatDipinjam) }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 bg-green-100 rounded-xl">
-                    <i class="fas fa-clipboard-list text-green-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500">Peminjaman Aktif</p>
-                    <p class="text-2xl font-bold text-green-600">{{ number_format($peminjamanAktif) }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 bg-purple-100 rounded-xl">
-                    <i class="fas fa-users text-purple-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500">User Terdaftar</p>
-                    <p class="text-2xl font-bold text-purple-600">{{ number_format($totalUser) }}</p>
+                <div class="hidden md:block">
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-6">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line text-4xl mb-2"></i>
+                            <p class="text-sm">Sistem Aktif</p>
+                            <p class="text-2xl font-bold">Online</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Charts Section --}}
+    <div class="p-8">
+
+    {{-- Elegant Stats Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                        <i class="fas fa-tools text-white text-xl"></i>
+                    </div>
+                    <div class="text-white/80 text-sm">Total Stok</div>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-3xl font-bold text-gray-900">{{ number_format($totalStok) }}</p>
+                <p class="text-sm text-gray-500 mt-1">Unit tersedia</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                        <i class="fas fa-check-circle text-white text-xl"></i>
+                    </div>
+                    <div class="text-white/80 text-sm">Tersedia Baik</div>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-3xl font-bold text-gray-900">{{ number_format($tersediaBaik) }}</p>
+                <p class="text-sm text-gray-500 mt-1">Unit dalam kondisi baik</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                        <i class="fas fa-tools text-white text-xl"></i>
+                    </div>
+                    <div class="text-white/80 text-sm">Unit Rusak</div>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-3xl font-bold text-gray-900">{{ number_format($totalUnitRusak) }}</p>
+                <p class="text-sm text-gray-500 mt-1">Unit perlu perbaikan</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-red-500 to-red-600 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                        <i class="fas fa-times-circle text-white text-xl"></i>
+                    </div>
+                    <div class="text-white/80 text-sm">Unit Habis</div>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-3xl font-bold text-gray-900">{{ number_format($unitHabis) }}</p>
+                <p class="text-sm text-gray-500 mt-1">Alat tidak tersedia</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                        <i class="fas fa-users text-white text-xl"></i>
+                    </div>
+                    <div class="text-white/80 text-sm">User Terdaftar</div>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-3xl font-bold text-gray-900">{{ number_format($totalUser) }}</p>
+                <p class="text-sm text-gray-500 mt-1">Pengguna aktif</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- Elegant Charts Section --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {{-- Peminjaman Chart --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Grafik Peminjaman 7 Hari Terakhir</h2>
-            <div class="h-64 flex items-end justify-between space-x-2">
-                @foreach($chartData as $index => $value)
-                    <div class="flex-1 flex flex-col items-center">
-                        <div class="w-full bg-gradient-to-t from-blue-500 to-blue-600 rounded-t" 
-                             style="height: {{ max($value, 1) * 20 }}px;">
-                        </div>
-                        <p class="text-xs text-gray-600 mt-2">{{ $labels[$index] }}</p>
-                        <p class="text-xs font-semibold text-gray-900">{{ $value }}</p>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold">Grafik Peminjaman 7 Hari Terakhir</h2>
+                    <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        <span class="text-sm">Analytics</span>
                     </div>
-                @endforeach
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="h-64 flex items-end justify-between space-x-2">
+                    @foreach($chartData as $index => $value)
+                        <div class="flex-1 flex flex-col items-center group">
+                            <div class="w-full bg-gradient-to-t from-blue-500 to-indigo-500 rounded-t-lg transition-all duration-300 group-hover:from-blue-600 group-hover:to-indigo-600" 
+                                 style="height: {{ max($value, 1) * 20 }}px;">
+                            </div>
+                            <p class="text-xs text-gray-600 mt-2">{{ $labels[$index] }}</p>
+                            <p class="text-xs font-semibold text-gray-900 bg-gray-100 px-2 py-1 rounded">{{ $value }}</p>
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </div>
 
         {{-- Peminjaman by Status --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Peminjaman Berdasarkan Status</h2>
-            <div class="space-y-4">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-500 to-teal-500 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold">Peminjaman Berdasarkan Status</h2>
+                    <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                        <i class="fas fa-tasks mr-2"></i>
+                        <span class="text-sm">Status</span>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
                 @foreach($peminjamanByStatus as $status => $count)
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
                         <div class="flex items-center">
                             @switch($status)
                                 @case('menunggu')
-                                    <div class="w-3 h-3 bg-gray-500 rounded-full"></div>
-                                    <span class="ml-3 text-sm text-gray-700">Menunggu</span>
+                                    <div class="w-4 h-4 bg-gray-500 rounded-full ring-2 ring-gray-200"></div>
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Menunggu</span>
                                     @break
                                 @case('disetujui')
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                    <span class="ml-3 text-sm text-gray-700">Disetujui</span>
+                                    <div class="w-4 h-4 bg-blue-500 rounded-full ring-2 ring-blue-200"></div>
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Disetujui</span>
                                     @break
                                 @case('dipinjam')
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                    <span class="ml-3 text-sm text-gray-700">Dipinjam</span>
+                                    <div class="w-4 h-4 bg-yellow-500 rounded-full ring-2 ring-yellow-200"></div>
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Dipinjam</span>
                                     @break
                                 @case('selesai')
-                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <span class="ml-3 text-sm text-gray-700">Selesai</span>
+                                    <div class="w-4 h-4 bg-green-500 rounded-full ring-2 ring-green-200"></div>
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Selesai</span>
                                     @break
                             @endswitch
                         </div>
-                        <span class="text-sm font-semibold text-gray-900">{{ $count }}</span>
+                        <div class="flex items-center">
+                            <div class="bg-gray-100 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
+                                {{ $count }}
+                            </div>
+                        </div>
                     </div>
                 @endforeach
             </div>

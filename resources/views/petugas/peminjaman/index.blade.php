@@ -1,43 +1,137 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="p-8">
+<div class="p-6">
+
+    {{-- Filter Form --}}
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+        <form method="GET" action="{{ route('petugas.peminjaman.index') }}" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
+                    <input type="date" name="start_date" value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Selesai</label>
+                    <input type="date" name="end_date" value="{{ request('end_date', now()->endOfDay()->format('Y-m-d')) }}" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div class="flex items-end space-x-2">
+                    <button type="submit" class="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-filter mr-2"></i>Filter
+                    </button>
+                    <a href="{{ route('petugas.peminjaman.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-redo"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {{-- Stats Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-clock text-white text-lg"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-yellow-700">Menunggu</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $peminjamans->where('status', 'menunggu')->count() }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-check-circle text-white text-lg"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-green-700">Disetujui</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $peminjamans->where('status', 'disetujui')->count() }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-hand-holding text-white text-lg"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-blue-700">Dipinjam</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $peminjamans->where('status', 'dipinjam')->count() }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-cyan-50 to-teal-50 border border-cyan-200 rounded-xl p-4">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-flag-checkered text-white text-lg"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-cyan-700">Selesai</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $peminjamans->where('status', 'selesai')->count() }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-4">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-chart-bar text-white text-lg"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-purple-700">Total</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $peminjamans->count() }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
 
         {{-- Header --}}
-        <div class="px-8 py-6 bg-white border-b border-gray-200 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800">Pengajuan Peminjaman</h1>
-                <p class="text-sm text-gray-500 mt-1">Kelola semua pengajuan peminjaman alat</p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                    </svg>
-                    Filter
-                </button>
-                <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                    </svg>
-                    Export
-                </button>
+        <div class="px-8 py-6 bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Pengajuan Peminjaman</h1>
+                    <p class="text-sm text-gray-600 mt-1">Kelola semua pengajuan peminjaman alat</p>
+                    @if(request('start_date') || request('end_date'))
+                        <p class="text-xs text-purple-600 mt-1">
+                            <i class="fas fa-filter mr-1"></i>
+                            Filter: {{ request('start_date', 'Awal') }} - {{ request('end_date', 'Akhir') }}
+                        </p>
+                    @endif
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="inline-flex items-center px-4 py-2 border border-purple-300 rounded-lg text-sm font-medium text-purple-700 bg-white hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
+                        <i class="fas fa-filter mr-2"></i>
+                        Filter
+                    </button>
+                    <a href="{{ route('petugas.laporan.export.peminjaman-pdf') }}?start_date={{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}&end_date={{ request('end_date', now()->endOfDay()->format('Y-m-d')) }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-300 rounded-lg hover:bg-red-100 transition-colors">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        Export PDF
+                    </a>
+                </div>
             </div>
         </div>
         {{-- Table --}}
         <div class="overflow-x-auto">
             <table class="min-w-full">
 
-                <thead class="bg-gray-50 border-b border-gray-200">
+                <thead class="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peminjam</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alat</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Peminjam</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Alat</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -50,11 +144,11 @@
 
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 h-8 w-8 flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600 rounded-full text-white font-bold text-sm">
+                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gradient-to-br from-green-400 to-emerald-600 rounded-full text-white font-bold text-sm shadow-md">
                                     {{ substr($p->user->username ?? 'U', 0, 1) }}
                                 </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">
+                                <div class="ml-3">
+                                    <div class="text-sm font-semibold text-gray-900">
                                         {{ $p->user->username ?? 'Unknown' }}
                                     </div>
                                     <div class="text-xs text-gray-500">
@@ -66,11 +160,11 @@
 
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 h-8 w-8 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg text-white font-bold text-sm">
+                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gradient-to-br from-blue-400 to-indigo-600 rounded-lg text-white font-bold text-sm shadow-md">
                                     {{ substr($p->alat->nama_alat ?? 'A', 0, 1) }}
                                 </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">
+                                <div class="ml-3">
+                                    <div class="text-sm font-semibold text-gray-900">
                                         {{ $p->alat->nama_alat ?? 'Unknown' }}
                                     </div>
                                     <div class="text-xs text-gray-500">
@@ -82,48 +176,46 @@
 
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
-                                <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
-                                </svg>
-                                <span class="text-sm font-medium text-gray-900">{{ $p->jumlah }} unit</span>
+                                <div class="w-8 h-8 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-boxes text-purple-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-semibold text-gray-900">{{ $p->jumlah }} unit</span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ \Carbon\Carbon::parse($p->tanggal_pinjam)->format('d M Y') }}</p>
+                                <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($p->tanggal_kembali_rencana)->format('d M Y') }}</p>
                             </div>
                         </td>
 
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($p->status == 'menunggu')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                                    </svg>
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 border border-yellow-200">
+                                    <i class="fas fa-clock mr-1.5"></i>
                                     Menunggu
                                 </span>
                             @elseif($p->status == 'disetujui')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                    </svg>
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                                    <i class="fas fa-check-circle mr-1.5"></i>
                                     Disetujui
                                 </span>
                             @elseif($p->status == 'dipinjam')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2h-1a1 1 0 100-2h1a4 4 0 014 4v6a4 4 0 01-4 4H6a4 4 0 01-4-4V5z" clip-rule="evenodd"></path>
-                                    </svg>
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
+                                    <i class="fas fa-hand-holding mr-1.5"></i>
                                     Dipinjam
                                 </span>
                             @elseif($p->status == 'selesai')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                    </svg>
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border border-gray-200">
+                                    <i class="fas fa-flag-checkered mr-1.5"></i>
                                     Selesai
                                 </span>
                             @else
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                    </svg>
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200">
+                                    <i class="fas fa-times-circle mr-1.5"></i>
                                     Ditolak
                                 </span>
                             @endif
@@ -135,10 +227,8 @@
                                     <form action="{{ route('petugas.peminjaman.approve', $p->id) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" 
-                                                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                            </svg>
+                                                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-md transition-all duration-200">
+                                            <i class="fas fa-check mr-1"></i>
                                             Approve
                                         </button>
                                     </form>
@@ -148,23 +238,19 @@
                                     <form action="{{ route('petugas.peminjaman.serahkan', $p->id) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" 
-                                                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
+                                                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-md transition-all duration-200">
+                                            <i class="fas fa-hand-holding mr-1"></i>
                                             Serahkan
                                         </button>
                                     </form>
                                 @endif
 
-                                <form action="/petugas/peminjaman/{{ $p->id }}/reject" method="POST" class="inline">
+                                <form action="{{ route('petugas.peminjaman.reject', $p->id) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="button" 
                                             onclick="confirmReject(this)" 
-                                            class="inline-flex items-center px-3 py-1.5 border border-red-300 shadow-sm text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
+                                            class="inline-flex items-center px-3 py-1.5 border border-red-300 rounded-lg text-xs font-semibold text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
+                                        <i class="fas fa-times mr-1"></i>
                                         Reject
                                     </button>
                                 </form>
@@ -174,12 +260,12 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
+                        <td colspan="7" class="px-6 py-12 text-center">
                             <div class="text-gray-500">
-                                <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                                </svg>
-                                <p class="text-sm font-medium">Tidak ada pengajuan peminjaman</p>
+                                <div class="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-inbox text-gray-400 text-2xl"></i>
+                                </div>
+                                <p class="text-sm font-semibold text-gray-700">Tidak ada pengajuan peminjaman</p>
                                 <p class="text-xs text-gray-400 mt-1">Belum ada pengajuan yang masuk</p>
                             </div>
                         </td>   

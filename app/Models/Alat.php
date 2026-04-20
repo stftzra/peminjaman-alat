@@ -11,6 +11,8 @@ class Alat extends Model
         'kategori_id',
         'stok',
         'harga_denda',
+        'kondisi_baik',
+        'kondisi_rusak',
     ];
 
     public function kategori()
@@ -21,5 +23,11 @@ class Alat extends Model
     public function peminjamans()
     {
         return $this->hasMany(Peminjaman::class);
+    }
+
+    // Accessor untuk nama alat
+    public function getNamaAttribute()
+    {
+        return $this->nama_alat;
     }
 }

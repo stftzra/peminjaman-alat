@@ -73,8 +73,7 @@
                                 name="role" 
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none" 
                                 required>
-                            <option value="admin" {{ $user->role=='admin'?'selected':'' }}>Admin - Akses penuh sistem</option>
-                            <option value="petugas" {{ $user->role=='petugas'?'selected':'' }}>Petugas - Kelola alat dan peminjaman</option>
+                             <option value="petugas" {{ $user->role=='petugas'?'selected':'' }}>Petugas - Kelola alat dan peminjaman</option>
                             <option value="peminjam" {{ $user->role=='peminjam'?'selected':'' }}>Peminjam - Pinjam alat saja</option>
                         </select>
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

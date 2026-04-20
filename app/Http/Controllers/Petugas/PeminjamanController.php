@@ -5,17 +5,22 @@ namespace App\Http\Controllers\Petugas;
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class PeminjamanController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $peminjamans = Peminjaman::with(['user', 'alat'])
-            ->whereIn('status', ['menunggu', 'disetujui'])
-            ->get();
+        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->startOfMonth();
+        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now()->endOfDay();
 
-        return view('petugas.peminjaman.index', compact('peminjamans'));
+        $query = Peminjaman::with(['user', 'alat'])
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        $peminjamans = $query->latest()->get();
+
+        return view('petugas.peminjaman.index', compact('peminjamans', 'startDate', 'endDate'));
     }
 
     public function approve($id)
@@ -24,11 +29,14 @@ class PeminjamanController extends Controller
 
         $alat = $peminjaman->alat;
 
-        if ($peminjaman->jumlah > $alat->stok) {
-            return back()->with('error', 'Stok tidak mencukupi');
+        // Cek apakah stok (kondisi baik) mencukupi
+        if ($peminjaman->jumlah > $alat->kondisi_baik) {
+            return back()->with('error', 'Stok alat baik tidak mencukupi. Tersedia: ' . $alat->kondisi_baik . ' unit baik');
         }
 
+        // Kurangi stok dan kondisi baik
         $alat->decrement('stok', $peminjaman->jumlah);
+        $alat->decrement('kondisi_baik', $peminjaman->jumlah);
 
         $peminjaman->update([
             'status' => 'disetujui'

@@ -32,14 +32,9 @@
                                   d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>
                         </svg>
                     </div>
+                    
 
-                    {{-- Tambah Alat Button --}}
-                    <a href="{{ route('admin.alat.create') }}" class="inline-flex items-center px-4 py-2.5 bg-white text-indigo-600 rounded-xl shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-white transition duration-300 font-medium text-sm">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Tambah Alat
-                    </a>
+
                 </div>
 
             </div>
@@ -71,9 +66,9 @@
                             <div class="text-sm font-medium text-gray-900">
                                 {{ $alat->nama_alat }}
                             </div>
-                            @if($alat->stok <= 5 && $alat->stok > 0)
-                            <div class="text-xs text-orange-600">
-                                Stok terbatas
+                            @if($alat->kondisi_rusak > 0)
+                            <div class="text-xs text-red-600">
+                                {{ $alat->kondisi_rusak }} rusak
                             </div>
                             @endif
                         </td>
@@ -97,18 +92,21 @@
                         </td>
 
                         <td class="px-6 py-4 text-center">
-                            <div class="flex justify-center items-center gap-2">
-
-                                <a href="{{ route('peminjam.alat.show', $alat->id) }}"
-                                   class="text-blue-600 hover:text-blue-900 text-sm font-medium">
-                                    Detail
-                                </a>
+                            <div class="flex justify-center items-center">
 
                                 @if($alat->stok > 0)
-                                <a href="{{ route('peminjam.alat.show', $alat->id) }}"
-                                   class="ml-3 text-green-600 hover:text-green-900 text-sm font-medium">
+                                <button onclick="openPinjamModal({{ $alat->id }}, '{{ $alat->nama_alat }}', {{ $alat->stok }})" 
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer"
+                                        type="button">
+                                    <i class="fas fa-hand-holding mr-1"></i>
                                     Pinjam
-                                </a>
+                                </button>
+                                @else
+                                <button disabled 
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-ban mr-1"></i>
+                                    Stok Habis
+                                </button>
                                 @endif
 
                             </div>
@@ -136,4 +134,157 @@
     </div>
 
 </div>
+
+{{-- Modal Pinjam --}}
+@foreach($alats as $alat)
+    @if($alat->stok > 0)
+    <div id="pinjamModal{{ $alat->id }}" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border-0">
+                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4 rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-3">
+                                <i class="fas fa-hand-holding text-white"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white">Form Peminjaman</h3>
+                        </div>
+                        <button type="button" onclick="closePinjamModal('pinjamModal{{ $alat->id }}')" class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/20 rounded-lg">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <form action="{{ route('peminjam.peminjaman.store') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="alat_id" value="{{ $alat->id }}">
+                    <div class="px-6 py-4">
+                        <div class="space-y-4">
+                            <div class="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-tools mr-2"></i>Nama Alat
+                                </label>
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold mr-3">
+                                        {{ substr($alat->nama_alat, 0, 1) }}
+                                    </div>
+                                    <input type="text" value="{{ $alat->nama_alat }}" readonly 
+                                           class="flex-1 px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-900 font-medium">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-cubes mr-2"></i>Jumlah
+                                </label>
+                                <div class="flex items-center">
+                                    <input type="number" name="jumlah" min="1" max="{{ $alat->stok }}" required
+                                           class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <div class="ml-3 px-3 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium">
+                                        <i class="fas fa-box mr-2"></i>Stok: {{ $alat->stok }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-xl border border-orange-200">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-calendar-alt mr-2"></i>Tanggal Pinjam
+                                </label>
+                                <input type="date" name="tanggal_pinjam" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-calendar-check mr-2"></i>Tanggal Rencana Kembali
+                                </label>
+                                <input type="date" name="tanggal_kembali_rencana" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Pastikan tanggal pengembalian sesuai dengan kebutuhan Anda
+                        </div>
+                        <div class="flex space-x-3">
+                            <button type="button" onclick="closePinjamModal('pinjamModal{{ $alat->id }}')" class="px-6 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-times mr-2"></i>
+                                Batal
+                            </button>
+                            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg">
+                                <i class="fas fa-paper-plane mr-2"></i>
+                                Ajukan Peminjaman
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
+
+@push('scripts')
+<script>
+function openPinjamModal(alatId, alatNama, stok) {
+
+    const modal = document.getElementById('pinjamModal' + alatId);
+    
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'block'; // Force display
+        document.body.style.overflow = 'hidden';
+        
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        const tanggalPinjamInput = modal.querySelector('input[name="tanggal_pinjam"]');
+        const tanggalKembaliInput = modal.querySelector('input[name="tanggal_kembali_rencana"]');
+                
+        if (tanggalPinjamInput) {
+            tanggalPinjamInput.min = today;
+            tanggalPinjamInput.value = today;
+        }
+        
+        if (tanggalKembaliInput) {
+            tanggalKembaliInput.min = today;
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tanggalKembaliInput.value = tomorrow.toISOString().split('T')[0];
+        }
+    }
+}
+
+function closePinjamModal(modalId) {
+    console.log(modalId);
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('fixed') || event.target.classList.contains('bg-opacity-50')) {
+        const modals = document.querySelectorAll('[id^="pinjamModal"]:not(.hidden)');
+        modals.forEach(modal => {
+            modal.classList.add('hidden');
+        });
+        document.body.style.overflow = 'auto';
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modals = document.querySelectorAll('[id^="pinjamModal"]:not(.hidden)');
+        modals.forEach(modal => {
+            modal.classList.add('hidden');
+        });
+        document.body.style.overflow = 'auto';
+    }
+});
+</script>
+@endpush
 @endsection

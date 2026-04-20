@@ -12,90 +12,16 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                            950: '#172554',
-                        },
-                        secondary: {
-                            50: '#f8fafc',
-                            100: '#f1f5f9',
-                            200: '#e2e8f0',
-                            300: '#cbd5e1',
-                            400: '#94a3b8',
-                            500: '#64748b',
-                            600: '#475569',
-                            700: '#334155',
-                            800: '#1e293b',
-                            900: '#0f172a',
-                            950: '#0f172a',
-                        },
-                        success: {
-                            50: '#ecfdf5',
-                            100: '#d1fae5',
-                            200: '#a7f3d0',
-                            300: '#6ee7b7',
-                            400: '#34d399',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                            800: '#065f46',
-                            900: '#064e3b',
-                            950: '#022c22',
-                        },
-                        warning: {
-                            50: '#fffbeb',
-                            100: '#fef3c7',
-                            200: '#fde68a',
-                            300: '#fcd34d',
-                            400: '#fbbf24',
-                            500: '#f59e0b',
-                            600: '#d97706',
-                            700: '#b45309',
-                            800: '#92400e',
-                            900: '#78350f',
-                            950: '#713f12',
-                        },
-                        danger: {
-                            50: '#fef2f2',
-                            100: '#fee2e2',
-                            200: '#fecaca',
-                            300: '#fca5a5',
-                            400: '#f87171',
-                            500: '#ef4444',
-                            600: '#dc2626',
-                            700: '#b91c1c',
-                            800: '#991b1b',
-                            900: '#7f1d1d',
-                            950: '#7c2d12',
-                        },
-                    }
-                }
-            }
-        }
-    </script>
     
-    <!-- Font Awesome for icons -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Custom CSS -->
     <style>
-        /* Custom scrollbar */
+        /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
         ::-webkit-scrollbar-track {
             background: #f1f5f9;
@@ -108,116 +34,94 @@
             background: #94a3b8;
         }
         
-        /* Sidebar transitions */
-        .sidebar-link {
-            transition: all 0.3s ease;
-        }
-        .sidebar-link:hover {
-            transform: translateX(4px);
-        }
-        
-        /* Active state */
-        .sidebar-link.active {
-            background: linear-gradient(to right, #3b82f6, #2563eb);
-            color: white;
-        }
-        
-        /* Header shadow */
-        .header-shadow {
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        /* Sidebar Transition */
+        .sidebar-transition {
+            transition: all 0.3s ease-in-out;
         }
     </style>
 </head>
 
-<body class="bg-gray-50 font-sans antialiased">
-
-    <div class="min-h-screen flex">
-        {{-- Sidebar --}}
-        <aside class="w-64 bg-white shadow-lg border-r border-gray-200">
-            {{-- Logo/Header --}}
-            <div class="h-16 flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 border-b border-gray-200">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                        <i class="fas fa-box-open text-indigo-600 text-xl"></i>
-                    </div>
-                    <div class="flex flex-col">
-                        <h1 class="text-white font-bold text-lg">Peminjaman</h1>
-                        <p class="text-indigo-200 text-xs">Management System</p>
-                    </div>
-                </div>
+<body class="font-sans antialiased bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg sidebar-transition">
+            <!-- Sidebar Header -->
+            <div class="h-16 bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center px-6">
+                <i class="fas fa-box-open text-white text-xl"></i>
+                <span class="ml-3 text-white font-semibold">Peminjaman</span>
             </div>
-
-            {{-- Sidebar Navigation --}}
-            <div class="p-4 space-y-2">
+            
+            <!-- Sidebar Navigation -->
+            <nav class="mt-6 px-4">
                 @auth
-                    @if (auth()->user()->role === 'admin')
+                    @if(auth()->user()->role === 'admin')
                         @include('partials.sidebar.admin')
-                    @elseif (auth()->user()->role === 'petugas')
+                    @elseif(auth()->user()->role === 'petugas')
                         @include('partials.sidebar.petugas')
-                    @else
+                    @elseif(auth()->user()->role === 'peminjam')
                         @include('partials.sidebar.peminjam')
                     @endif
                 @endauth
-            </div>
+            </nav>
         </aside>
 
-        {{-- Main Content --}}
-        <div class="flex-1 flex flex-col">
-            {{-- Header --}}
-            <header class="h-16 bg-white header-shadow border-b border-gray-200 flex items-center justify-between px-6">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7m-7 6h7"></path>
-                        </svg>
-                        <h1 class="text-xl font-semibold text-gray-800">
-                            @yield('header', 'Dashboard')
-                        </h1>
-                    </div>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Top Header -->
+            <header class="h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-semibold text-gray-800">@yield('title', 'Dashboard')</h1>
                 </div>
-
-                <div class="flex items-center gap-4">
-                    {{-- User Profile --}}
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            {{ substr(auth()->user()->username ?? auth()->user()->email, 0, 1) }}
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">{{ auth()->user()->username ?? auth()->user()->email }}</p>
-                            <p class="text-xs text-gray-500 capitalize">{{ auth()->user()->role }}</p>
-                        </div>
-                    </div>
-
-                    {{-- Notifications --}}
-                    <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.414-1.414a2 2 0 00-2.828 0L5 17m0 0V7a2 2 0 012 2h14a2 2 0 002-2V7a2 2 0 00-2-2m0 0h-2m0 0v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-2z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
-
-                    {{-- Logout --}}
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4 4m4-4H3m4 0h6a2 2 0 002-2v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h6z"></path>
-                            </svg>
-                            Logout
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-600">
+                        {{ auth()->user()->name ?? auth()->user()->username }}
+                    </span>
+                    
+                    <div class="relative">
+                        <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            <span class="sr-only">Open user menu</span>
+                            <div class="h-8 w-8 rounded-full bg-gradient-to-r from-purple-400 to-indigo-400 flex items-center justify-center">
+                                <i class="fas fa-user text-white text-xs"></i>
+                            </div>
                         </button>
+                    </div>
+                    
+                    <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">
+                        @csrf
                     </form>
+                    <button type="button" onclick="logout()" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
             </header>
 
-            {{-- Page Content --}}
-            <main class="flex-1 bg-gray-50">
-                <div class="px-6 py-4">
-                    @yield('content')
-                </div>
-            </main>
-        </div>
+            <!-- Page Content -->
+            <div class="p-6">
+                @yield('content')
+            </div>
+        </main>
     </div>
 
+    <!-- JavaScript -->
+    <script>
+        // Auto-hide sidebar on mobile
+        if (window.innerWidth < 768) {
+            document.querySelector('aside').classList.add('hidden');
+        }
+        
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.querySelector('aside');
+            sidebar.classList.toggle('hidden');
+        }
+        
+        // Logout function
+        function logout() {
+            event.preventDefault();
+            document.getElementById('logout-form').submit();
+        }
+    </script>
 </body>
 </html>

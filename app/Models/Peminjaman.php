@@ -14,6 +14,7 @@ class Peminjaman extends Model
         'jumlah',
         'tanggal_pinjam',
         'tanggal_kembali_rencana',
+        'batas_kembali',
         'status',
         'keterangan',
     ];
@@ -26,6 +27,11 @@ class Peminjaman extends Model
     public function alat()
     {
         return $this->belongsTo(Alat::class);
+    }
+
+    public function pengembalian()
+    {
+        return $this->hasOne(Pengembalian::class, 'peminjaman_id');
     }
 }
 
